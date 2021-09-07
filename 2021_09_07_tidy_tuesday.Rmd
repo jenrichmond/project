@@ -18,12 +18,14 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
 library(tidytuesdayR)
+library(ggeasy)
+library(here)
 
 ```
 
 # Load the weekly Data
 
-Dowload the weekly data and make available in the `tt` object.
+Download the weekly data and make available in the `tt` object.
 
 ```{r Load}
 
@@ -61,8 +63,30 @@ Explore the data and process it into a nice format for plotting! Access each dat
 
 ```{r Wrangle}
 
+lap_times <- tt$lap_times
 
+drivers <- tt$drivers
 
+drivers <- drivers %>%
+  select(driverId, driverRef, dob, nationality)
+
+# join driver details to laptimes
+
+driver_laps <- left_join(lap_times, drivers, by = "driverId")
+
+unique(driver_laps$driverRef)
+
+unique(driver_laps$nationality)
+
+```
+
+# Oz vs NZ
+
+```{r}
+nzoz <- driver_laps %>%
+  filter(nationality %in% c("New Zealander", "Australian"))
+
+unique(nzoz$driverRef)
 ```
 
 
@@ -71,6 +95,16 @@ Explore the data and process it into a nice format for plotting! Access each dat
 Using your processed dataset, create your unique visualization.
 
 ```{r Visualize}
+
+nzoz %>%
+  filter(driverRef %in% c("ricciardo", "brendon_hartley")) %>%
+  group_by(lap, driverRef, nationality) %>%
+  summarise(mean_lap = mean(milliseconds)) %>%
+  ggplot(aes(x = lap, y = mean_lap, colour = driverRef, shape = nationality)) +
+  geom_point() +
+  facet_wrap(~driverRef) +
+  theme_classic()  +
+  labs(title = "Mean lap times (ms) by Kiwi and Aussie formula one drivers", y = "Mean lap time (ms)")
 
 
   
@@ -84,7 +118,8 @@ Save your image for sharing. Be sure to use the `#TidyTuesday` hashtag in your p
 
 # This will save your most recent plot
 ggsave(
-  filename = "My TidyTuesday Plot.png",
+  path = here("figures"), 
+  filename = "formula one Plot.png",
   device = "png")
 
 ```
